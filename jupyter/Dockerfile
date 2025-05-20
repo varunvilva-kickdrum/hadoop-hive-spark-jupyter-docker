@@ -10,8 +10,21 @@ RUN apt-get update && \
     gcc \
     iputils-ping \
     net-tools \
+    curl \
+    wget \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# Install Hadoop client
+RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.2.1/hadoop-3.2.1.tar.gz \
+    && tar -xzf hadoop-3.2.1.tar.gz -C /opt \
+    && mv /opt/hadoop-3.2.1 /opt/hadoop \
+    && rm hadoop-3.2.1.tar.gz \
+    && ln -s /opt/hadoop/bin/hdfs /usr/bin/hdfs \
+    && mkdir -p /opt/hadoop/etc/hadoop/
+
+# Copy Hadoop configuration
+COPY core-site.xml /opt/hadoop/etc/hadoop/
 
 # Install additional Python packages
 RUN pip install --no-cache-dir \
@@ -29,9 +42,13 @@ RUN mkdir -p /home/jovyan/work/util
 # Configure PySpark kernel
 COPY kernel.json /home/jovyan/.local/share/jupyter/kernels/pyspark/
 COPY pyspark-init.py /home/jovyan/work/util/
+COPY load_to_hdfs.py /home/jovyan/work/
+COPY hdfs_spark_demo.py /home/jovyan/work/
+COPY shared_data_demo.py /home/jovyan/work/
+RUN chmod +x /home/jovyan/work/load_to_hdfs.py /home/jovyan/work/hdfs_spark_demo.py /home/jovyan/work/shared_data_demo.py
 
 # Set permissions
-RUN chown -R jovyan:users /home/jovyan/.local /home/jovyan/work
+RUN chown -R jovyan:users /home/jovyan/.local /home/jovyan/work /opt/hadoop
 
 USER jovyan
 
@@ -41,8 +58,10 @@ ENV SPARK_OPTS="--driver-java-options=-Xms1024M --driver-java-options=-Xmx4096M 
 ENV SPARK_MASTER=spark://spark-master:7077
 ENV SPARK_DRIVER_HOST=jupyter
 ENV SPARK_DRIVER_BINDADDRESS=0.0.0.0
+ENV HADOOP_HOME=/opt/hadoop
+ENV PATH=$PATH:/opt/hadoop/bin
 
 # Create a README with instructions
-RUN echo 'To use Spark in your notebooks, import the helper module:\n\nfrom util.pyspark-init import spark\n\n# Then use the "spark" session object\ndf = spark.createDataFrame([("Alice", 25), ("Bob", 30)], ["Name", "Age"])\ndf.show()' > /home/jovyan/work/README.md
+RUN echo 'Spark and Dataset Integration\n\n1. Shared Volume Approach (Recommended):\n   Run shared_data_demo.py to access datasets shared between all Spark containers:\n   python shared_data_demo.py\n\n2. HDFS Approach (Advanced):\n   First run load_to_hdfs.py to copy your datasets to HDFS:\n   python load_to_hdfs.py\n   Then run hdfs_spark_demo.py to test reading from HDFS:\n   python hdfs_spark_demo.py\n\nBoth approaches make your data available to all Spark workers.\n' > /home/jovyan/work/README.md
 
 WORKDIR /home/jovyan/work 

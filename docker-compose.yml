@@ -7,22 +7,8 @@ services:
     ports:
       - "9870:9870"
       - "9000:9000"
-    environment:
-      - CLUSTER_NAME=test
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
-      - CORE_CONF_hadoop_http_staticuser_user=root
-      - CORE_CONF_hadoop_proxyuser_hue_hosts=*
-      - CORE_CONF_hadoop_proxyuser_hue_groups=*
-      - CORE_CONF_io_compression_codecs=org.apache.hadoop.io.compress.SnappyCodec
-      - HDFS_CONF_dfs_webhdfs_enabled=true
-      - HDFS_CONF_dfs_permissions_enabled=false
-      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
-      - HDFS_CONF_dfs_namenode_http___address=0.0.0.0:9870
-      - HDFS_CONF_dfs_namenode_rpc___address=0.0.0.0:9000
-      - JAVA_OPTS=-Djava.net.preferIPv4Stack=true -Xmx2g -Xms2g
-      - HADOOP_HEAPSIZE=2048
     env_file:
-      - ./hadoop.env
+      - ./hadoop-namenode.env
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
     networks:
@@ -52,15 +38,8 @@ services:
         condition: service_healthy
     environment:
       SERVICE_PRECONDITION: "namenode:9870"
-      CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
-      CORE_CONF_hadoop_http_staticuser_user: "root"
-      HDFS_CONF_dfs_webhdfs_enabled: "true"
-      HDFS_CONF_dfs_permissions_enabled: "false"
-      HDFS_CONF_dfs_datanode_data_dir: "/hadoop/dfs/data"
-      HDFS_CONF_dfs_datanode_address: "0.0.0.0:50010"
-      HDFS_CONF_dfs_datanode_http___address: "0.0.0.0:50075"
     env_file:
-      - ./hadoop.env
+      - ./hadoop-namenode.env
     volumes:
       - hadoop_datanode1:/hadoop/dfs/data
     networks:
@@ -75,15 +54,8 @@ services:
         condition: service_healthy
     environment:
       SERVICE_PRECONDITION: "namenode:9870"
-      CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
-      CORE_CONF_hadoop_http_staticuser_user: "root"
-      HDFS_CONF_dfs_webhdfs_enabled: "true"
-      HDFS_CONF_dfs_permissions_enabled: "false"
-      HDFS_CONF_dfs_datanode_data_dir: "/hadoop/dfs/data"
-      HDFS_CONF_dfs_datanode_address: "0.0.0.0:50010"
-      HDFS_CONF_dfs_datanode_http___address: "0.0.0.0:50075"
     env_file:
-      - ./hadoop.env
+      - ./hadoop-namenode.env
     volumes:
       - hadoop_datanode2:/hadoop/dfs/data
     networks:
@@ -99,6 +71,13 @@ services:
       - "7077:7077"
     environment:
       - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./datasets:/opt/bitnami/spark/datasets
+      - ./hadoop.env:/opt/bitnami/spark/conf/hadoop-env.sh
     networks:
       - bigdata_network
 
@@ -109,11 +88,23 @@ services:
     restart: always
     depends_on:
       - spark-master
+      - namenode
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=6G
+      - SPARK_WORKER_CORES=6
+      - SPARK_CONF_DIR=/opt/bitnami/spark/conf
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_WORKER_CLEANUP_ENABLED=true
+      - SPARK_SHUFFLE_SERVICE_ENABLED=true
+      - HADOOP_CONF_DIR=/opt/bitnami/spark/conf
+    volumes:
+      - ./hadoop.env:/opt/bitnami/spark/conf/hadoop-env.sh
+      - ./datasets:/opt/bitnami/spark/datasets
     networks:
       - bigdata_network
 
@@ -123,11 +114,23 @@ services:
     restart: always
     depends_on:
       - spark-master
+      - namenode
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=6G
+      - SPARK_WORKER_CORES=6
+      - SPARK_CONF_DIR=/opt/bitnami/spark/conf
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_WORKER_CLEANUP_ENABLED=true
+      - SPARK_SHUFFLE_SERVICE_ENABLED=true
+      - HADOOP_CONF_DIR=/opt/bitnami/spark/conf
+    volumes:
+      - ./hadoop.env:/opt/bitnami/spark/conf/hadoop-env.sh
+      - ./datasets:/opt/bitnami/spark/datasets
     networks:
       - bigdata_network
 
@@ -198,8 +201,12 @@ services:
       - ./datasets:/home/jovyan/datasets
     environment:
       - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_DRIVER_MEMORY=2G
+      - SPARK_EXECUTOR_MEMORY=2G
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
     depends_on:
       - spark-master
+      - namenode
     networks:
       - bigdata_network
 

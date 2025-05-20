@@ -5,7 +5,7 @@ This is a Docker Compose environment for big data processing, including Hadoop, 
 ## Components
 
 - **Hadoop**: Namenode + 2 Datanodes
-- **Spark**: Master + 2 Workers
+- **Spark**: Master + 2 Workers (each with 6 cores, 6GB memory)
 - **Hive**: HiveServer2 with PostgreSQL metastore
 - **Jupyter**: Notebook with PySpark support
 
@@ -33,25 +33,47 @@ bigdata-env/
 ├── datasets/
 ├── docker-compose.yml
 ├── hadoop.env
+├── start-spark.sh
+├── start-essential.sh
 └── README.md
 ```
 
 ## Starting the Environment
 
-1. Create the required directories:
+1. Make the startup scripts executable:
 ```bash
-mkdir -p bigdata-env/{hadoop,spark,hive,jupyter,datasets} bigdata-env/hive/{warehouse,pgdata,conf}
+chmod +x start-spark.sh start-essential.sh
 ```
 
-2. Start the environment:
+2. Start the full environment (includes Hadoop, Spark, Hive, and Jupyter):
 ```bash
-cd bigdata-env
-docker-compose up -d
+./start-spark.sh
+```
+
+OR start only essential services:
+```bash
+./start-essential.sh
 ```
 
 3. Wait for all services to start (this may take a few minutes):
 ```bash
 docker-compose ps
+```
+
+## Container Startup Order
+The startup scripts handle this automatically:
+1. Namenode
+2. Datanodes
+3. Spark master
+4. Spark workers
+5. Postgres
+6. Hive
+7. Jupyter
+
+## Loading Datasets to HDFS
+To ensure efficient data sharing between nodes, load your datasets to HDFS:
+```bash
+python3 jupyter/load_to_hdfs.py
 ```
 
 ## Accessing Services
@@ -77,10 +99,25 @@ spark = SparkSession.builder \
     .config("spark.master", "spark://spark-master:7077") \
     .getOrCreate()
 
-# Test Spark
-df = spark.createDataFrame([(1, "test"), (2, "test2")], ["id", "value"])
+# IMPORTANT: Always use HDFS paths for optimal performance
+# Read from HDFS (recommended for distributed processing)
+df = spark.read.option("header", "true").option("inferSchema", "true").csv("hdfs://namenode:9000/data/cities.csv")
 df.show()
+
+# Alternative file formats
+df_parquet = spark.read.parquet("hdfs://namenode:9000/data/sales_data.parquet")
+df_orc = spark.read.orc("hdfs://namenode:9000/data/sales_data.orc")
+df_json = spark.read.json("hdfs://namenode:9000/data/order_singleline.json")
 ```
+
+## Important File Access Notes
+
+1. **Do not use relative paths** like `datasets/cities.csv` as they will be incorrectly resolved to HDFS paths under `/user/jovyan/`
+
+2. **Always use one of these path formats**:
+   - HDFS path (recommended): `hdfs://namenode:9000/data/cities.csv`
+   - Local filesystem: `file:///home/jovyan/datasets/cities.csv`
+   - Worker path: `file:///opt/bitnami/spark/datasets/cities.csv`
 
 ## Using Hive
 
@@ -107,6 +144,13 @@ To remove all data volumes:
 docker-compose down -v
 ```
 
+## Worker Resource Configuration
+Each Spark worker is configured with:
+- 6 CPU cores
+- 6GB memory
+
+This configuration provides good performance for most big data tasks. You can modify these values in the docker-compose.yml file if needed.
+
 ## Troubleshooting
 
 1. If services fail to start, check logs:
@@ -123,6 +167,18 @@ docker exec -it hive schematool -dbType postgres -initSchema
 ```bash
 docker-compose restart spark-worker1 spark-worker2
 ```
+
+4. If datasets are not visible in HDFS, check and reload them:
+```bash
+docker exec namenode hdfs dfs -ls /data
+python3 jupyter/load_to_hdfs.py
+```
+
+## Non-Essential Files
+These files are not critical for basic operation:
+- `.git/` directory
+- `.gitignore`
+- Test files like `test_spark_dataset.py` and `spark_dataset_test.ipynb`
 
 ## Security Notes
 
