@@ -1,0 +1,17 @@
+{
+    "argv": [
+        "python",
+        "-m",
+        "ipykernel_launcher",
+        "-f",
+        "{connection_file}"
+    ],
+    "display_name": "PySpark",
+    "language": "python",
+    "env": {
+        "SPARK_HOME": "/usr/local/spark",
+        "PYTHONPATH": "/usr/local/spark/python:/usr/local/spark/python/lib/py4j-0.10.9-src.zip",
+        "PYTHONSTARTUP": "/usr/local/spark/python/pyspark/shell.py",
+        "PYSPARK_SUBMIT_ARGS": "--master spark://spark-master:7077 --driver-memory 4g --executor-memory 4g pyspark-shell"
+    }
+} 

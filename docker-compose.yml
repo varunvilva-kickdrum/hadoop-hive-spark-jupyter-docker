@@ -1,0 +1,212 @@
+services:
+  # Hadoop Namenode
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      - CLUSTER_NAME=test
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - CORE_CONF_hadoop_proxyuser_hue_hosts=*
+      - CORE_CONF_hadoop_proxyuser_hue_groups=*
+      - CORE_CONF_io_compression_codecs=org.apache.hadoop.io.compress.SnappyCodec
+      - HDFS_CONF_dfs_webhdfs_enabled=true
+      - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+      - HDFS_CONF_dfs_namenode_http___address=0.0.0.0:9870
+      - HDFS_CONF_dfs_namenode_rpc___address=0.0.0.0:9000
+      - JAVA_OPTS=-Djava.net.preferIPv4Stack=true -Xmx2g -Xms2g
+      - HADOOP_HEAPSIZE=2048
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    networks:
+      - bigdata_network
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870/dfshealth.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Hadoop Datanodes
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode1
+    restart: always
+    depends_on:
+      namenode:
+        condition: service_healthy
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+      CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
+      CORE_CONF_hadoop_http_staticuser_user: "root"
+      HDFS_CONF_dfs_webhdfs_enabled: "true"
+      HDFS_CONF_dfs_permissions_enabled: "false"
+      HDFS_CONF_dfs_datanode_data_dir: "/hadoop/dfs/data"
+      HDFS_CONF_dfs_datanode_address: "0.0.0.0:50010"
+      HDFS_CONF_dfs_datanode_http___address: "0.0.0.0:50075"
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - hadoop_datanode1:/hadoop/dfs/data
+    networks:
+      - bigdata_network
+
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    restart: always
+    depends_on:
+      namenode:
+        condition: service_healthy
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+      CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
+      CORE_CONF_hadoop_http_staticuser_user: "root"
+      HDFS_CONF_dfs_webhdfs_enabled: "true"
+      HDFS_CONF_dfs_permissions_enabled: "false"
+      HDFS_CONF_dfs_datanode_data_dir: "/hadoop/dfs/data"
+      HDFS_CONF_dfs_datanode_address: "0.0.0.0:50010"
+      HDFS_CONF_dfs_datanode_http___address: "0.0.0.0:50075"
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+    networks:
+      - bigdata_network
+
+  # Spark Master
+  spark-master:
+    image: bitnami/spark:3.5.0
+    container_name: spark-master
+    restart: always
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    environment:
+      - SPARK_MODE=master
+    networks:
+      - bigdata_network
+
+  # Spark Workers
+  spark-worker1:
+    image: bitnami/spark:3.5.0
+    container_name: spark-worker1
+    restart: always
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+    networks:
+      - bigdata_network
+
+  spark-worker2:
+    image: bitnami/spark:3.5.0
+    container_name: spark-worker2
+    restart: always
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+    networks:
+      - bigdata_network
+
+  # PostgreSQL for Hive Metastore
+  postgres:
+    build: ./postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - ./hive/pgdata:/var/lib/postgresql/data
+    networks:
+      - bigdata_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Hive
+  hive:
+    build:
+      context: ./hive
+      dockerfile: Dockerfile
+    container_name: hive
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      namenode:
+        condition: service_healthy
+    environment:
+      - HADOOP_NAMENODE=namenode
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=hive
+      - POSTGRES_PASSWORD=hive
+      - POSTGRES_DB=metastore
+      - HADOOP_HOME=/opt/hadoop-3.2.1
+      - HADOOP_CONF_DIR=/opt/hadoop-3.2.1/etc/hadoop
+      - PATH=/opt/hadoop-3.2.1/bin:/opt/hive/bin:$PATH
+      - HIVE_HOME=/opt/hive
+    volumes:
+      - ./hive/warehouse:/opt/hive/warehouse
+      - ./hive/conf:/opt/hive/conf
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    networks:
+      - bigdata_network
+
+  # Jupyter Notebook
+  jupyter:
+    build:
+      context: ./jupyter
+      dockerfile: Dockerfile
+    container_name: jupyter
+    restart: always
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./jupyter:/home/jovyan/work
+      - ./datasets:/home/jovyan/datasets
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    networks:
+      - bigdata_network
+
+networks:
+  bigdata_network:
+    driver: bridge
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2: 
