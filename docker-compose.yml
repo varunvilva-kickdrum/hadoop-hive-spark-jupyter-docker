@@ -192,6 +192,7 @@ services:
     restart: always
     ports:
       - "8888:8888"
+      - "4040:4040"
     volumes:
       - ./jupyter:/home/jovyan/work
       - ./datasets:/home/jovyan/datasets
