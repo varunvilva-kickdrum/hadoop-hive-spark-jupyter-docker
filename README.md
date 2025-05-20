@@ -81,7 +81,7 @@ python3 jupyter/load_to_hdfs.py
 - **Hadoop Namenode UI**: http://localhost:9870
 - **Spark Master UI**: http://localhost:8080
 - **Jupyter Notebook**: http://localhost:8888
-- **HiveServer2**: localhost:10000
+- **HiveServer2**: http://localhost:10002
 
 ## Using Jupyter Notebook
 

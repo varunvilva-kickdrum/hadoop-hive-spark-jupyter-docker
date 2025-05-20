@@ -1,2 +1,74 @@
-hive/pgdata
+# Datasets
 datasets/*
+
+# Jupyter checkpoints
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+jupyter/.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Hive
+hive/pgdata/
+hive/metastore/
+hive/warehouse/*
+hive/derby.log
+hive/metastore_db/
+hive/logs/
+metastore_db/
+
+# Hadoop
+hadoop/datanode*
+hadoop/namenode
+hadoop/logs/
+hadoop-data/
+hadoop/tmp/
+logs/
+
+# Spark
+spark/logs/
+spark/work/
+spark/warehouse/
+derby.log
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor and IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temp files
+*.log
+*.tmp
+tmp/
+temp/
