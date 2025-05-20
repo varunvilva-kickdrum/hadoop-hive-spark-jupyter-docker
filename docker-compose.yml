@@ -157,9 +157,7 @@ services:
 
   # Hive
   hive:
-    build:
-      context: ./hive
-      dockerfile: Dockerfile
+    image: bde2020/hive:2.3.2-postgresql-metastore
     container_name: hive
     restart: always
     depends_on:
@@ -168,18 +166,14 @@ services:
       namenode:
         condition: service_healthy
     environment:
-      - HADOOP_NAMENODE=namenode
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USER=hive
-      - POSTGRES_PASSWORD=hive
-      - POSTGRES_DB=metastore
-      - HADOOP_HOME=/opt/hadoop-3.2.1
-      - HADOOP_CONF_DIR=/opt/hadoop-3.2.1/etc/hadoop
-      - PATH=/opt/hadoop-3.2.1/bin:/opt/hive/bin:$PATH
-      - HIVE_HOME=/opt/hive
-    volumes:
-      - ./hive/warehouse:/opt/hive/warehouse
-      - ./hive/conf:/opt/hive/conf
+      - HIVE_SITE_CONF_javax_jdo_option_ConnectionURL=jdbc:postgresql://postgres:5432/metastore
+      - HIVE_SITE_CONF_javax_jdo_option_ConnectionDriverName=org.postgresql.Driver
+      - HIVE_SITE_CONF_javax_jdo_option_ConnectionUserName=hive
+      - HIVE_SITE_CONF_javax_jdo_option_ConnectionPassword=hive
+      - HIVE_SITE_CONF_datanucleus_autoCreateSchema=false
+      - HIVE_SITE_CONF_hive_metastore_schema_verification=false
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - SERVICE_PRECONDITION=namenode:9000 postgres:5432
     ports:
       - "10000:10000"
       - "10002:10002"
