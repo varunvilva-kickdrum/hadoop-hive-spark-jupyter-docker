@@ -146,7 +146,7 @@ services:
       POSTGRES_DB: metastore
       PGDATA: /var/lib/postgresql/data
     volumes:
-      - ./hive/pgdata:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     networks:
       - bigdata_network
     healthcheck:
@@ -213,3 +213,4 @@ volumes:
   hadoop_namenode:
   hadoop_datanode1:
   hadoop_datanode2: 
+  pg_data:
