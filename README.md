@@ -55,6 +55,11 @@ OR start only essential services:
 ./start-essential.sh
 ```
 
+AND load the data from local machine to HDFS (Needs to be done when the data is updated as well)
+```bash
+./init-hdfs.sh
+```
+
 3. Wait for all services to start (this may take a few minutes):
 ```bash
 docker-compose ps
@@ -73,7 +78,7 @@ The startup scripts handle this automatically:
 ## Loading Datasets to HDFS
 To ensure efficient data sharing between nodes, load your datasets to HDFS:
 ```bash
-python3 jupyter/load_to_hdfs.py
+./init-hdfs.sh
 ```
 
 ## Accessing Services
@@ -170,8 +175,7 @@ docker-compose restart spark-worker1 spark-worker2
 
 4. If datasets are not visible in HDFS, check and reload them:
 ```bash
-docker exec namenode hdfs dfs -ls /data
-python3 jupyter/load_to_hdfs.py
+./init-hdfs.sh
 ```
 
 ## Non-Essential Files

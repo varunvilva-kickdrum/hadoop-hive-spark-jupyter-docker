@@ -42,8 +42,6 @@ RUN mkdir -p /home/jovyan/work/util
 # Configure PySpark kernel
 COPY kernel.json /home/jovyan/.local/share/jupyter/kernels/pyspark/
 COPY pyspark-init.py /home/jovyan/work/util/
-COPY load_to_hdfs.py /home/jovyan/work/
-RUN chmod +x /home/jovyan/work/load_to_hdfs.py 
 
 # Set permissions
 RUN chown -R jovyan:users /home/jovyan/.local /home/jovyan/work /opt/hadoop
@@ -60,6 +58,4 @@ ENV HADOOP_HOME=/opt/hadoop
 ENV PATH=$PATH:/opt/hadoop/bin
 
 # Create a README with instructions
-RUN echo 'Spark and Dataset Integration\n\n1. Shared Volume Approach (Recommended):\n   Run shared_data_demo.py to access datasets shared between all Spark containers:\n   python shared_data_demo.py\n\n2. HDFS Approach (Advanced):\n   First run load_to_hdfs.py to copy your datasets to HDFS:\n   python load_to_hdfs.py\n   Then run hdfs_spark_demo.py to test reading from HDFS:\n   python hdfs_spark_demo.py\n\nBoth approaches make your data available to all Spark workers.\n' > /home/jovyan/work/README.md
-
 WORKDIR /home/jovyan/work 

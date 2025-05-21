@@ -11,6 +11,7 @@ services:
       - ./hadoop-namenode.env
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
+      - ./datasets:/datasets
     networks:
       - bigdata_network
     ulimits:

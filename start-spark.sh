@@ -29,9 +29,6 @@ docker exec namenode hdfs dfs -mkdir -p /data
 echo "Waiting for Jupyter to be ready..."
 sleep 10
 
-echo "Loading datasets into HDFS for efficient sharing..."
-docker exec jupyter python /home/jovyan/work/load_to_hdfs.py
-
 echo "Spark cluster is now ready with datasets loaded in HDFS!"
 echo "Worker configuration: 6 cores and 6GB memory per worker"
 echo "Datasets available in:"
