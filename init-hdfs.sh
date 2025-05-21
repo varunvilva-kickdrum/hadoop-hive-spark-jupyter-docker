@@ -2,7 +2,7 @@
 
 # Wait for namenode to be ready
 echo "Waiting for namenode to be ready..."
-sleep 30
+sleep 3
 
 # Create /data directory in HDFS
 echo "Creating /data directory in HDFS..."

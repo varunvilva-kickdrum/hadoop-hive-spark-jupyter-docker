@@ -35,6 +35,11 @@ RUN pip install --no-cache-dir \
     pure-sasl \
     thrift-sasl
 
+# Download Hudi JAR
+RUN mkdir -p /opt/spark/jars && \
+    cd /opt/spark/jars && \
+    wget https://repo1.maven.org/maven2/org/apache/hudi/hudi-spark3-bundle_2.12/0.14.0/hudi-spark3-bundle_2.12-0.14.0.jar
+
 # Create necessary directories
 RUN mkdir -p /home/jovyan/.local/share/jupyter/kernels/pyspark
 RUN mkdir -p /home/jovyan/work/util
@@ -44,7 +49,7 @@ COPY kernel.json /home/jovyan/.local/share/jupyter/kernels/pyspark/
 COPY pyspark-init.py /home/jovyan/work/util/
 
 # Set permissions
-RUN chown -R jovyan:users /home/jovyan/.local /home/jovyan/work /opt/hadoop
+RUN chown -R jovyan:users /home/jovyan/.local /home/jovyan/work /opt/hadoop /opt/spark
 
 USER jovyan
 
@@ -56,6 +61,7 @@ ENV SPARK_DRIVER_HOST=jupyter
 ENV SPARK_DRIVER_BINDADDRESS=0.0.0.0
 ENV HADOOP_HOME=/opt/hadoop
 ENV PATH=$PATH:/opt/hadoop/bin
+ENV SPARK_EXTRA_CLASSPATH=/opt/spark/jars/hudi-spark3-bundle_2.12-0.14.0.jar
 
 # Create a README with instructions
 WORKDIR /home/jovyan/work 
