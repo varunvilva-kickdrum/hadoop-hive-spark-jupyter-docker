@@ -43,9 +43,7 @@ RUN mkdir -p /home/jovyan/work/util
 COPY kernel.json /home/jovyan/.local/share/jupyter/kernels/pyspark/
 COPY pyspark-init.py /home/jovyan/work/util/
 COPY load_to_hdfs.py /home/jovyan/work/
-COPY hdfs_spark_demo.py /home/jovyan/work/
-COPY shared_data_demo.py /home/jovyan/work/
-RUN chmod +x /home/jovyan/work/load_to_hdfs.py /home/jovyan/work/hdfs_spark_demo.py /home/jovyan/work/shared_data_demo.py
+RUN chmod +x /home/jovyan/work/load_to_hdfs.py 
 
 # Set permissions
 RUN chown -R jovyan:users /home/jovyan/.local /home/jovyan/work /opt/hadoop

@@ -5,7 +5,7 @@ docker-compose up -d namenode datanode1 datanode2 spark-master
 
 echo "Waiting for Spark master to be healthy..."
 while true; do
-  if docker exec spark-master curl -s http://spark-master:8080 > /dev/null; then
+  if curl -s http://localhost:8080 > /dev/null; then
     echo "Spark master is ready!"
     break
   else
