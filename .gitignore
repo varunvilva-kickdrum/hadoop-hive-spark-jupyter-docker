@@ -1,5 +1,6 @@
 # Datasets
 datasets/*
+airflow/datasets/*
 
 # Jupyter checkpoints
 .ipynb_checkpoints
