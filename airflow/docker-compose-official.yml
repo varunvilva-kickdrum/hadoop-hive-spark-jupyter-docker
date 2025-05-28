@@ -24,6 +24,7 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+    - ./scripts:/opt/airflow/scripts
     - ../datasets:/opt/airflow/datasets
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
@@ -75,7 +76,7 @@ services:
       - "9090:9090"
     environment:
       <<: *airflow-common-env
-      ADDITIONAL_PYTHON_MODULES: "apache-airflow-providers-apache-spark apache-airflow-providers-apache-hdfs apache-airflow-providers-apache-hive"
+      ADDITIONAL_PYTHON_MODULES: "apache-airflow-providers-apache-spark apache-airflow-providers-apache-hdfs apache-airflow-providers-apache-hive hdfs requests"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:9090/health"]
       interval: 30s
@@ -92,7 +93,7 @@ services:
     command: scheduler
     environment:
       <<: *airflow-common-env
-      ADDITIONAL_PYTHON_MODULES: "apache-airflow-providers-apache-spark apache-airflow-providers-apache-hdfs apache-airflow-providers-apache-hive"
+      ADDITIONAL_PYTHON_MODULES: "apache-airflow-providers-apache-spark apache-airflow-providers-apache-hdfs apache-airflow-providers-apache-hive hdfs requests"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -117,7 +118,7 @@ services:
       start_period: 30s
     environment:
       <<: *airflow-common-env
-      ADDITIONAL_PYTHON_MODULES: "apache-airflow-providers-apache-spark apache-airflow-providers-apache-hdfs apache-airflow-providers-apache-hive"
+      ADDITIONAL_PYTHON_MODULES: "apache-airflow-providers-apache-spark apache-airflow-providers-apache-hdfs apache-airflow-providers-apache-hive hdfs requests"
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"

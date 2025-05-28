@@ -187,6 +187,7 @@ services:
     ports:
       - "10000:10000"
       - "10002:10002"
+      - "9083:9083"
     networks:
       - bigdata_network
 
