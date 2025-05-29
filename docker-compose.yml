@@ -224,3 +224,4 @@ volumes:
   hadoop_datanode1:
   hadoop_datanode2: 
   pg_data:
+  shared_data:

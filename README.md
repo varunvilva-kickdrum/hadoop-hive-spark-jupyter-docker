@@ -31,17 +31,12 @@ bigdata-env/
 ├── jupyter/
 │   ├── Dockerfile
 │   └── kernel.json
-├── airflow/
-│   ├── dags/
-│   ├── logs/
-│   ├── plugins/
-│   └── docker-compose-airflow.yml
 ├── datasets/
 ├── docker-compose.yml
 ├── hadoop.env
-├── start-spark.sh
+├── start-environment.sh
 ├── start-essential.sh
-├── start-airflow.sh
+├── fix_hive_issue.sh
 └── README.md
 ```
 
@@ -49,30 +44,15 @@ bigdata-env/
 
 1. Make the startup scripts executable:
 ```bash
-chmod +x start-spark.sh start-essential.sh start-airflow.sh
+chmod +x start-environment.sh
 ```
 
 2. Start the full environment (includes Hadoop, Spark, Hive, and Jupyter):
 ```bash
-./start-spark.sh
+./start-environment.sh
 ```
 
-OR start only essential services:
-```bash
-./start-essential.sh
-```
-
-3. Start the Airflow services:
-```bash
-./start-airflow.sh
-```
-
-AND load the data from local machine to HDFS (Needs to be done when the data is updated as well)
-```bash
-./init-hdfs.sh
-```
-
-4. Wait for all services to start (this may take a few minutes):
+3. Wait for all services to start (this may take a few minutes):
 ```bash
 docker-compose ps
 ```
@@ -86,10 +66,9 @@ The startup scripts handle this automatically:
 5. Postgres
 6. Hive
 7. Jupyter
-8. Airflow
 
 ## Loading Datasets to HDFS
-To ensure efficient data sharing between nodes, load your datasets to HDFS:
+To ensure efficient data sharing between nodes, load your datasets to HDFS(even for updates):
 ```bash
 ./init-hdfs.sh
 ```
@@ -100,8 +79,8 @@ To ensure efficient data sharing between nodes, load your datasets to HDFS:
 - **Spark Master UI**: http://localhost:8080
 - **Jupyter Notebook**: http://localhost:8888
 - **HiveServer2**: http://localhost:10002
-- **Airflow Webserver**: http://localhost:9090
-- **Airflow Flower**: http://localhost:5555
+- **Hive Metastore**: thrift://hive:9083
+
 
 ## Using Jupyter Notebook
 
@@ -151,55 +130,6 @@ docker exec -it hive beeline -u jdbc:hive2://localhost:10000
 CREATE TABLE test (id INT, value STRING);
 INSERT INTO test VALUES (1, 'test'), (2, 'test2');
 SELECT * FROM test;
-```
-
-## Using Apache Airflow
-
-1. Access Airflow webserver at http://localhost9090
-2. Default credentials: username: airflow, password: airflow
-3. The Airflow instance is pre-configured with connections to:
-   - Spark master at spark://spark-master:7077
-   - HDFS at hdfs://namenode:9000
-   - Hive at hive://hive:10000
-4. DAGs are stored in the `airflow/dags` directory
-5. An example DAG that integrates with Spark is provided
-
-### Creating New DAGs
-
-Create new DAG files in the `airflow/dags` directory. Example:
-
-```python
-from datetime import datetime, timedelta
-from airflow import DAG
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
-
-# Define DAG
-dag = DAG(
-    'my_spark_job',
-    schedule_interval=timedelta(days=1),
-    start_date=datetime(2023, 1, 1),
-    catchup=False
-)
-
-# Define Spark job
-spark_job = SparkSubmitOperator(
-    task_id='run_spark_job',
-    application='/opt/airflow/datasets/my_spark_job.py',
-    conn_id='spark_default',
-    dag=dag
-)
-```
-
-### Stopping Airflow
-
-```bash
-docker-compose -f airflow/docker-compose-airflow.yml down
-```
-
-## Stopping the Environment
-
-```bash
-docker-compose down
 ```
 
 To remove all data volumes:

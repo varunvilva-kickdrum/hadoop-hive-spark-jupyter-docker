@@ -36,5 +36,11 @@ echo "  - Local path: ./datasets"
 echo "  - HDFS path: hdfs://namenode:9000/data/"
 echo "  - Worker path: /opt/bitnami/spark/datasets"
 echo "  - Jupyter path: /home/jovyan/datasets" 
+
+chmod +x start-essential.sh
+chmod +x init-hdfs.sh
+chmod +x fix_hive_issue.sh
 ./start-essential.sh
 ./init-hdfs.sh
+sleep 5
+./fix_hive_issue.sh
